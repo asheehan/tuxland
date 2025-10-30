@@ -25,6 +25,9 @@ defmodule Tuxland.Game.Movement do
   @doc """
   Find the Nth occurrence of a color after the current position.
 
+  The end space (:end) acts as a rainbow - it matches ANY color, allowing
+  players to reach the finish line with any color card.
+
   ## Examples
       iex> find_next_color(5, :red, board, 1)
       {:ok, 7}
@@ -35,7 +38,7 @@ defmodule Tuxland.Game.Movement do
   def find_next_color(current_position, color, board, occurrence_count) do
     board
     |> Enum.drop(current_position + 1)  # Start searching after current position
-    |> Enum.filter(fn space -> space.color == color end)
+    |> Enum.filter(fn space -> space.color == color or space.color == :end end)
     |> Enum.take(occurrence_count)
     |> List.last()
     |> case do

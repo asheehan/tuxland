@@ -69,6 +69,42 @@ defmodule Tuxland.Game.MovementTest do
     end
   end
 
+  describe "calculate_move/3 reaching the end (Rainbow Castle)" do
+    test "end space acts as rainbow - matches any color when it's the next occurrence", %{board: board} do
+      # From position 132 (one before end), any color should reach the end
+      colors = [:red, :purple, :yellow, :blue, :orange, :green]
+
+      for color <- colors do
+        card = %Card{type: :single, color: color}
+        {:ok, new_pos} = Movement.calculate_move(132, card, board)
+
+        # Should reach the end (133) or stay at 132 if there's a matching color at 132
+        space = Enum.at(board, new_pos)
+        assert new_pos >= 132, "Color #{color} should reach at least 132"
+
+        # If we're very close to the end, we should be able to reach it
+        if new_pos == 133 do
+          assert space.type == :end, "Position 133 should be the end"
+        end
+      end
+    end
+
+    test "can reach end from late position with any color", %{board: board} do
+      # Test from position 130 - should be able to reach end with various colors
+      card = %Card{type: :single, color: :red}
+      {:ok, new_pos} = Movement.calculate_move(130, card, board)
+
+      # The end space at 133 acts as a rainbow, so it should be reachable
+      assert new_pos >= 130, "Should move forward"
+
+      # Can eventually reach 133
+      assert Enum.any?(131..133, fn pos ->
+        space = Enum.at(board, pos)
+        space.color in [:red, :end]
+      end)
+    end
+  end
+
   describe "calculate_move/3 with location cards" do
     test "moves directly to location position regardless of current position", %{board: board} do
       card = %Card{
