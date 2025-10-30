@@ -69,17 +69,12 @@ defmodule TuxlandWeb.GameLive do
 
   @impl true
   def handle_info({:game_update, {:card_drawn, _player_id, card, _new_position}, game_state}, socket) do
-    # Update game state and show card animation
-    socket = assign(socket,
+    # Update game state and show card - card stays visible permanently
+    {:noreply, assign(socket,
       game_state: game_state,
       last_card: card,
       card_animation: true
-    )
-
-    # Clear animation after delay
-    Process.send_after(self(), :clear_card_animation, 2000)
-
-    {:noreply, socket}
+    )}
   end
 
   def handle_info({:game_update, {:game_won, _winner_id}, game_state}, socket) do
@@ -88,10 +83,6 @@ defmodule TuxlandWeb.GameLive do
 
   def handle_info({:game_update, _message, game_state}, socket) do
     {:noreply, assign(socket, game_state: game_state)}
-  end
-
-  def handle_info(:clear_card_animation, socket) do
-    {:noreply, assign(socket, card_animation: false, last_card: nil)}
   end
 
   @impl true
@@ -115,14 +106,6 @@ defmodule TuxlandWeb.GameLive do
               <div class="bg-white rounded-lg shadow-lg p-6">
                 <.simple_board board={@game_state.board} players={@game_state.players} />
 
-                <!-- Card Display -->
-                <%= if @card_animation and @last_card do %>
-                  <div class="mt-4 p-6 bg-white border-4 border-gray-800 rounded-lg shadow-xl">
-                    <p class="text-lg font-semibold text-gray-800 mb-3">Card Drawn:</p>
-                    <.card_display_component card={@last_card} />
-                  </div>
-                <% end %>
-
                 <!-- Draw Button -->
                 <%= if is_current_player?(@game_state, @player_id) do %>
                   <div class="mt-4 flex justify-center">
@@ -136,6 +119,14 @@ defmodule TuxlandWeb.GameLive do
                 <% else %>
                   <div class="mt-4 text-center text-gray-600">
                     Waiting for <%= current_player(@game_state).name %> to draw...
+                  </div>
+                <% end %>
+
+                <!-- Card Display -->
+                <%= if @card_animation and @last_card do %>
+                  <div class="mt-4 p-6 bg-white border-4 border-gray-800 rounded-lg shadow-xl">
+                    <p class="text-lg font-semibold text-gray-800 mb-3">Last Card Drawn:</p>
+                    <.card_display_component card={@last_card} />
                   </div>
                 <% end %>
               </div>
