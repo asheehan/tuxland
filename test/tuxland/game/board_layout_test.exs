@@ -25,7 +25,7 @@ defmodule Tuxland.Game.BoardLayoutTest do
 
       assert last_space.position == 133
       assert last_space.type == :end
-      assert last_space.name == "Kernel Castle"
+      assert last_space.name == "Rainbow Castle 🏰"
     end
 
     test "contains 6 colors in pattern" do

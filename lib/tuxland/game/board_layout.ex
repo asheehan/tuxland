@@ -22,7 +22,7 @@ defmodule Tuxland.Game.BoardLayout do
   end
 
   defp create_space(0), do: %{position: 0, color: :start, type: :start, name: "Boot Sector"}
-  defp create_space(133), do: %{position: 133, color: :end, type: :end, name: "Kernel Castle"}
+  defp create_space(133), do: %{position: 133, color: :end, type: :end, name: "Rainbow Castle 🏰"}
 
   defp create_space(@kernel_kompile_canyon), do: %{position: @kernel_kompile_canyon, color: :red, type: :named, name: "Kernel Kompile Canyon"}
   defp create_space(@repository_ridge), do: %{position: @repository_ridge, color: :green, type: :named, name: "Repository Ridge"}

@@ -224,29 +224,72 @@ defmodule TuxlandWeb.GameLive do
     """
   end
 
-  # Simple board visualization - just showing positions
+  # Curvy Candyland-style board visualization
   defp simple_board(assigns) do
     ~H"""
     <div class="mb-4">
-      <h2 class="text-xl font-semibold mb-3">Game Board</h2>
-      <div class="grid grid-cols-10 gap-1">
-        <%= for space <- Enum.take(@board, 40) do %>
+      <h2 class="text-xl font-semibold mb-3">Game Board - Race to the Rainbow Castle! 🏰</h2>
+      <div class="bg-gradient-to-br from-blue-50 to-green-50 p-4 rounded-lg overflow-x-auto">
+        <!-- Curvy path layout: snake pattern with 20 spaces per row -->
+        <%= for row <- 0..6 do %>
           <div class={[
-            "aspect-square rounded flex items-center justify-center text-xs font-bold",
-            space_color_class(space.color)
+            "flex gap-1 mb-1",
+            if(rem(row, 2) == 1, do: "flex-row-reverse", else: "")
           ]}>
-            <%= space.position %>
-            <%= if players_at_position(space.position, @players) != [] do %>
-              <div class="absolute">
-                <%= for player <- players_at_position(space.position, @players) do %>
-                  <span class="text-lg"><%= tux_emoji(player.tux_variant) %></span>
-                <% end %>
-              </div>
+            <%= for col <- 0..19 do %>
+              <% position = row * 20 + col %>
+              <%= if position < length(@board) do %>
+                <% space = Enum.at(@board, position) %>
+                <div
+                  class={[
+                    "w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold relative transition-all hover:scale-110 group",
+                    space_color_class(space.color),
+                    if(space.type == :named, do: "ring-4 ring-yellow-400 ring-opacity-50", else: "")
+                  ]}
+                  title={if space.name, do: space.name, else: "Space #{space.position}"}
+                >
+                  <%= if players_at_position(space.position, @players) != [] do %>
+                    <div class="absolute -top-1 flex gap-0">
+                      <%= for player <- players_at_position(space.position, @players) do %>
+                        <span class="text-xl drop-shadow-lg"><%= tux_emoji(player.tux_variant) %></span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <%= if space.type in [:start, :end, :named] do %>
+                      <span class="text-2xl"><%= space_icon(space.type) %></span>
+                    <% else %>
+                      <span class="opacity-70"><%= space.position %></span>
+                    <% end %>
+                  <% end %>
+
+                  <!-- Hover tooltip for special spaces -->
+                  <%= if space.name do %>
+                    <div class="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                      <%= space.name %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
             <% end %>
           </div>
         <% end %>
+
+        <!-- Legend -->
+        <div class="mt-4 flex flex-wrap gap-2 text-xs">
+          <div class="flex items-center gap-1">
+            <div class="w-4 h-4 rounded bg-gradient-to-br from-red-500 via-yellow-400 to-purple-600 border-4 border-yellow-300"></div>
+            <span class="font-semibold">Rainbow Castle (Finish)</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="w-4 h-4 rounded bg-green-500 border-2 border-green-700"></div>
+            <span>Boot Sector (Start)</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="w-4 h-4 rounded ring-2 ring-yellow-400 bg-red-500"></div>
+            <span>Named Locations</span>
+          </div>
+        </div>
       </div>
-      <p class="text-sm text-gray-500 mt-2">Showing first 40 spaces (of 134 total)</p>
     </div>
     """
   end
@@ -255,14 +298,18 @@ defmodule TuxlandWeb.GameLive do
     Enum.filter(players, fn p -> p.position == position end)
   end
 
-  defp space_color_class(:start), do: "bg-green-200 border-2 border-green-500"
-  defp space_color_class(:end), do: "bg-purple-200 border-2 border-purple-500"
-  defp space_color_class(:red), do: "bg-red-200"
-  defp space_color_class(:purple), do: "bg-purple-200"
-  defp space_color_class(:yellow), do: "bg-yellow-200"
-  defp space_color_class(:blue), do: "bg-blue-200"
-  defp space_color_class(:orange), do: "bg-orange-200"
-  defp space_color_class(:green), do: "bg-green-200"
+  defp space_icon(:start), do: "🚀"
+  defp space_icon(:end), do: "🏰"
+  defp space_icon(:named), do: "⭐"
+
+  defp space_color_class(:start), do: "bg-green-500 border-4 border-green-700 shadow-lg text-white"
+  defp space_color_class(:end), do: "bg-gradient-to-br from-red-500 via-yellow-400 to-purple-600 border-4 border-yellow-300 shadow-2xl animate-pulse text-white"
+  defp space_color_class(:red), do: "bg-red-500 text-white"
+  defp space_color_class(:purple), do: "bg-purple-500 text-white"
+  defp space_color_class(:yellow), do: "bg-yellow-400 text-gray-800"
+  defp space_color_class(:blue), do: "bg-blue-500 text-white"
+  defp space_color_class(:orange), do: "bg-orange-500 text-white"
+  defp space_color_class(:green), do: "bg-green-500 text-white"
 
   # Card display component with color swatch
   defp card_display_component(assigns) do
@@ -316,19 +363,6 @@ defmodule TuxlandWeb.GameLive do
   defp card_type_text(:location), do: "Location"
 
   defp color_name(color), do: color |> to_string() |> String.upcase()
-
-  # Legacy card_display (kept for backward compatibility)
-  defp card_display(%{type: :single, color: color}) do
-    "Single #{color |> to_string() |> String.upcase()}"
-  end
-
-  defp card_display(%{type: :double, color: color}) do
-    "Double #{color |> to_string() |> String.upcase()}"
-  end
-
-  defp card_display(%{type: :location, location_name: name}) do
-    "📍 #{name}"
-  end
 
   defp current_player(game_state) do
     Enum.at(game_state.players, game_state.current_player_index)
